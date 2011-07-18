@@ -77,7 +77,7 @@
   return itemsArray;
 }
 
-/** 
+/**
  * Creates and returns a data object by reading every byte
  * from the file specified by a given path in zip archive.
  *
@@ -91,7 +91,7 @@
     NSLog(@"error: unzFile is not opened yet");
     return nil;
   }
-  
+
   const char *rawFilename = [path fileSystemRepresentation];
   if(unzLocateFile(unzipFile_, rawFilename, 0) != UNZ_OK) {
     NSLog(@"error: cannot locate file '%@'", path);
