@@ -72,7 +72,6 @@ Boolean GetMetadataForURL(void* thisInterface,
                                                       options:NSXMLDocumentTidyXML
                                                         error:NULL];
   if(!xmlDoc) {
-    [xmlDoc release];
     [unzip release];
     [pool release];
     return FALSE;
