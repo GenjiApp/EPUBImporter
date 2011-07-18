@@ -52,7 +52,6 @@
 		<dict>
 			<key>UTTypeConformsTo</key>
 			<array>
-				<string>org.idpf.epub</string>
 				<string>public.zip-archive</string>
 				<string>public.data</string>
 				<string>public.item</string>
