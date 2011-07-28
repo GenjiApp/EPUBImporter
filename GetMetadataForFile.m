@@ -188,7 +188,7 @@ Boolean GetMetadataForURL(void* thisInterface,
     if(htmlData) {
       NSXMLDocument *htmlDoc;
       htmlDoc = [[NSXMLDocument alloc] initWithData:htmlData
-                                            options:NSXMLDocumentTidyHTML
+                                            options:NSXMLDocumentTidyXML
                                               error:NULL];
       if(htmlDoc) {
         NSArray *nodes = [htmlDoc nodesForXPath:@"/html" error:NULL];
