@@ -59,6 +59,8 @@ Boolean GetMetadataForURL(void* thisInterface,
 
   NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
 
+  NSCharacterSet *setForTrim = [NSCharacterSet whitespaceAndNewlineCharacterSet];
+
   NSString *path = [(NSURL *)urlForFile path];
   GNJUnZip *unzip = [[GNJUnZip alloc] initWithZipFile:path];
 
@@ -79,12 +81,16 @@ Boolean GetMetadataForURL(void* thisInterface,
   NSString *xpath = @"/container/rootfiles/rootfile/@full-path";
   NSArray *nodes = [xmlDoc nodesForXPath:xpath error:NULL];
   if(![nodes count]) {
+    NSLog(@"no such nodes for xpath '%@'", xpath);
     [xmlDoc release];
     [unzip release];
     [pool release];
     return FALSE;
   }
-  NSString *opfPath = [[nodes objectAtIndex:0] stringValue];
+  NSXMLNode *fullPathNode = [nodes objectAtIndex:0];
+  NSString *fullPathValue = [fullPathNode stringValue];
+  NSString *opfPath = [fullPathValue stringByTrimmingCharactersInSet:setForTrim];
+  opfPath = [opfPath stringByReplacingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
   [xmlDoc release];
 
   xmlData = [unzip dataWithContentsOfFile:opfPath];
@@ -105,6 +111,7 @@ Boolean GetMetadataForURL(void* thisInterface,
   xpath = @"/package/metadata/*";
   nodes = [xmlDoc nodesForXPath:xpath error:NULL];
   if(![nodes count]) {
+    NSLog(@"no such nodes for xpath '%@'", xpath);
     [xmlDoc release];
     [unzip release];
     [pool release];
@@ -160,6 +167,7 @@ Boolean GetMetadataForURL(void* thisInterface,
   xpath = @"/package/manifest/item";
   nodes = [xmlDoc nodesForXPath:xpath error:NULL];
   if(![nodes count]) {
+    NSLog(@"no such nodes for xpath '%@'", xpath);
     [xmlDoc release];
     [unzip release];
     [pool release];
@@ -169,21 +177,28 @@ Boolean GetMetadataForURL(void* thisInterface,
   for(NSXMLElement *elem in nodes) {
     NSXMLNode *idNode = [elem attributeForName:@"id"];
     NSXMLNode *hrefNode = [elem attributeForName:@"href"];
-    [manifest setObject:[hrefNode stringValue] forKey:[idNode stringValue]];
+    NSString *key = [[idNode stringValue] stringByTrimmingCharactersInSet:setForTrim];
+    NSString *path = [[hrefNode stringValue] stringByTrimmingCharactersInSet:setForTrim];
+    path = [path stringByReplacingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
+    [manifest setObject:path forKey:key];
   }
   xpath = @"/package/spine/itemref/@idref";
   nodes = [xmlDoc nodesForXPath:xpath error:NULL];
   if(![nodes count]) {
+    NSLog(@"no such nodes for xpath '%@'", xpath);
     [xmlDoc release];
     [unzip release];
     [pool release];
     return FALSE;
   }
+  NSString *opfBasePath = [opfPath stringByDeletingLastPathComponent];
   for(NSXMLNode *node in nodes) {
-    NSString *key = [node stringValue];
-    NSString *opfBasePath = [opfPath stringByDeletingLastPathComponent];
-    NSString *path = [opfBasePath
-                      stringByAppendingPathComponent:[manifest objectForKey:key]];
+    NSString *idrefValue = [[node stringValue] stringByTrimmingCharactersInSet:setForTrim];
+    NSString *hrefValue = [manifest objectForKey:idrefValue];
+    if(![hrefValue length]) continue;
+    NSString *path = nil;
+    if([hrefValue isAbsolutePath]) path = [hrefValue substringFromIndex:1];
+    else path = [opfBasePath stringByAppendingPathComponent:hrefValue];
     NSData *htmlData = [unzip dataWithContentsOfFile:path];
     if(htmlData) {
       NSXMLDocument *htmlDoc;
